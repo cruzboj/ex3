@@ -1,19 +1,17 @@
-FLAGS=-Wall -Werror
-TOP=../
-CC=gcc
-TESTS=
+EXEC = pr2hrm
+OBJS = pr2hrm.o pr2hrm.o
 
-all: test1 test2
+run: prog
+	./prog
 
-test1: main.c $(TOP)/*.c
-	$(CC) $(FLAGS) -DTEST1 -I$(TOP) main.c $(TOP)/*.c -L$(TOP) -lprog2 -o $@
-	./$@ > ./$@.out 2> ./$@.err 
-.PHONY: test1
- 
-test2: main.c $(TOP)/*.c
-	$(CC) $(FLAGS) -DTEST2 -I$(TOP) main.c $(TOP)/*.c -L$(TOP) -lprog2 -o $@
-	./$@ > ./$@.out 2> ./$@.err 
-.PHONY: test2
+prog: my_prog.o main.o
+	gcc *.o -o prog
+
+main.o: main.c pr2hrm.h pr2ex3.h
+	gcc -c main.c
+
+my_prog.o: my_prog.c pr2hrm.h pr2ex3.h linked_list.h libprog2.a
+	gcc -c my_prog.c
 
 clean:
-	rm -f *.o test1 test2
+	rm -f *.o prog
