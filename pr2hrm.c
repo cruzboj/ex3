@@ -1,42 +1,68 @@
 #include "pr2hrm.h"
 #include "linked_list.h"
+#include <string.h>
+#include <stdlib.h>
 
-typedef struct node_s{
-    int index;
-    struct node_s * next;
-}node_t;
+#define MAX_NAME_LEN 256
+#define empty (-1)
 
 typedef struct HrMgmt_s
 {
-    char *name;
+    LinkedList list;
+}HrMgmt_t,*HrMgmt;
+
+typedef struct Workers_s
+{
+    char name[MAX_NAME_LEN];
     int id;
     HrmWorkerRole role;
     float wage;
     int numOfShifts;
-    node_t * head;
-}HrMgmt_t;
+}worker_t,*Worker;
+/*worker_t type , Worker is pointer */
+
+static ListElement copyworker(ListElement element){
+    Worker worker  = (Worker)element;
+    Worker new_worker = NULL;
+    if (element == NULL)
+        return NULL;
+    new_worker = (Worker)malloc(sizeof(worker_t));
+    if(new_worker == NULL)
+        return NULL;
+
+    strncpy(new_worker->name,worker->name,MAX_NAME_LEN);
+    new_worker->id = worker->id;
+    new_worker->role = worker->role;
+    new_worker->wage = worker->wage;
+    new_worker->numOfShifts = worker->numOfShifts;
+
+    return new_worker;
+}
+static void freeWorker(ListElement element){
+    if (element)
+        free(element);
+}
+
+static void printWorker(FILE *out, ListElement element)
+{
+    Worker worker = (Worker)element;
+    if (worker == NULL)
+        return;
+    fprintf(out, "\t[%09d] %s %d %d %f\n", worker->id,worker->name,worker->numOfShifts,worker->role,worker->wage);
+}
 
 HrMgmt HrMgmtCreate() {
-    HrMgmt hrm = (HrMgmt)malloc(sizeof(HrMgmt_t));
-    if (hrm == NULL) {
+    HrMgmt new_hr = (HrMgmt)malloc(sizeof(HrMgmt_t));
+    if (new_hr == NULL)
         return NULL;
-    }
-    hrm->name = NULL;
-    hrm->id = NULL;
-    hrm->role = NULL;
-    hrm->numOfShifts = NULL;
-    hrm->wage = 0;
-    hrm->head = (node_t *)malloc(sizeof(node_t));
-    if(hrm->head == NULL)
+    if(linkedListCreate(&(new_hr->list),copyworker,freeWorker,printWorker) != LIST_SUCCESS)
     {
-        free(hrm);
-        return NULL;
+        free(NULL);
+        return HRM_OUT_OF_MEMORY;
     }
-    hrm->head->index = NULL;
-    hrm->head->next = NULL;
-
-    return hrm;
+    return HRM_SUCCESS;
 }
+
 void HrMgmtDestroy(HrMgmt hrm){
     if(hrm){
         
