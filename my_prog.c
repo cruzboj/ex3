@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #define MAX_NAME_LEN 256
+#define MAX_SHIFT 100
 #define empty (-1)
 
 typedef struct HrMgmt_s
@@ -12,6 +13,12 @@ typedef struct HrMgmt_s
 
 }HrMgmt_t,*HrMgmt;
 
+typedef struct shift_s
+{
+    HrmShiftDay day;
+    HrmShiftType shift_type;
+}shift_t,*shift;
+
 typedef struct Workers_s
 {
     char name[MAX_NAME_LEN];
@@ -19,6 +26,7 @@ typedef struct Workers_s
     HrmWorkerRole role;
     float wage;
     int numOfShifts;
+    shift_t Shifts[MAX_SHIFT];
 }worker_t,*Worker;
 /*worker_t type , Worker is pointer */
 
@@ -37,8 +45,14 @@ static ListElement copyworker(ListElement element){
     new_worker->wage = worker->wage;
     new_worker->numOfShifts = worker->numOfShifts;
 
+    for (int i = 0; i < worker->numOfShifts; i++) {
+        new_worker->Shifts[i].day = worker->Shifts[i].day;
+        new_worker->Shifts[i].shift_type = worker->Shifts[i].shift_type;
+    }
+    
     return new_worker;
 }
+
 static void freeWorker(ListElement element){
     if (element)
         free(element);
@@ -59,6 +73,7 @@ static int matchWorkerById(ListElement element, KeyForListElement key){
     int id = *(int*)key;
     return wo->id == id;
 }
+
 
 HrMgmt HrMgmtCreate() {
     HrMgmt new_hr = (HrMgmt)malloc(sizeof(HrMgmt_t));
@@ -102,22 +117,44 @@ HrmResult HrMgmtAddWorker(HrMgmt hrm,const char *name, int id, HrmWorkerRole rol
     return HRM_SUCCESS;
 }
 HrmResult HrMgmtRemoveWorker(HrMgmt hrm, int id){
-    Worker rem_wo ;
-
+    /*
+    if(hrm == NULL)
+        return HRM_NULL_ARGUMENT;
+    */
     linkedListGoToHead(hrm->list);
-    rem_wo->id = id;
-    if(rem_wo->id < 0)
-        return HRM_INVALID_WORKER_ID;
-    else if(linkedListFind(hrm->list,&id,matchWorkerById) != LIST_SUCCESS){
+    
+
+    if(linkedListFind(hrm->list,&id,matchWorkerById) == LIST_SUCCESS){
         if(linkedListRemoveCurrent(hrm->list) != LIST_SUCCESS)
-            return HRM_WORKER_DOES_NOT_EXIST;
+            return HRM_INVALID_WORKER_ID;
     }
-    
-    
+    else
+    {
+        return HRM_WORKER_DOES_NOT_EXIST;
+    }
+    return HRM_SUCCESS;
 
 }
 HrmResult HrMgmtAddShiftToWorker(HrMgmt hrm, int id, HrmShiftDay day,HrmShiftType type){
-
+    
+    /*
+    if(hrm == NULL)
+        return HRM_NULL_ARGUMENT;
+    */
+    linkedListGoToHead(hrm->list);
+    if(id < 0)
+        return HRM_INVALID_WORKER_ID;
+    if(linkedListFind(hrm->list,&id,matchWorkerById) == LIST_SUCCESS){
+        Worker worker_shift;  
+        /*  
+        if(linkedListGetCurrent(hrm->list,(ListElement *)worker_shift->numOfShifts))
+            return HRM_SHIFTS_OVERFLLOW;
+        else if(linkedListGetCurrent(hrm->list, (ListElement*)&worker_shift) == LIST_SUCCESS)
+            return HRM_SHIFT_ALREADY_EXISTS;
+        */
+    }
+    else
+        return HRM_WORKER_DOES_NOT_EXIST;
 }
 HrmResult HrMgmtRemoveShiftFromWorker(HrMgmt hrm, int id, HrmShiftDay day,HrmShiftType type){
 
