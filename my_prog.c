@@ -1,8 +1,8 @@
 #include "pr2hrm.h"
 #include "linked_list.h"
+
 #include <string.h>
 #include <stdlib.h>
-
 #define MAX_NAME_LEN 256
 #define empty (-1)
 
@@ -73,10 +73,10 @@ HrMgmt HrMgmtCreate() {
 }
 
 void HrMgmtDestroy(HrMgmt hrm){
-    if(hrm){
-        
+    if(hrm)
         free(hrm);
-    }
+    if(linkedListDestroy(hrm->list) == LIST_SUCCESS)
+        free(hrm);
     return;
 }
 HrmResult HrMgmtAddWorker(HrMgmt hrm,const char *name, int id, HrmWorkerRole role, float wage, int numOfShifts){
@@ -100,14 +100,20 @@ HrmResult HrMgmtAddWorker(HrMgmt hrm,const char *name, int id, HrmWorkerRole rol
         return HRM_WORKER_ALREADY_EXISTS;
     else
     return HRM_SUCCESS;
-}a
+}
 HrmResult HrMgmtRemoveWorker(HrMgmt hrm, int id){
     Worker rem_wo ;
+
+    linkedListGoToHead(hrm->list);
     rem_wo->id = id;
-    if(rem_wo->id < 0 )
+    if(rem_wo->id < 0)
         return HRM_INVALID_WORKER_ID;
-    else if(linkedListFind(hrm->list,&id,matchWorkerById) != LIST_SUCCESS)
-        return HRM_WORKER_DOES_NOT_EXIST;
+    else if(linkedListFind(hrm->list,&id,matchWorkerById) != LIST_SUCCESS){
+        if(linkedListRemoveCurrent(hrm->list) != LIST_SUCCESS)
+            return HRM_WORKER_DOES_NOT_EXIST;
+    }
+    
+    
 
 }
 HrmResult HrMgmtAddShiftToWorker(HrMgmt hrm, int id, HrmShiftDay day,HrmShiftType type){
