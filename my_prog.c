@@ -17,6 +17,7 @@ typedef struct shift_s
 {
     HrmShiftDay day;
     HrmShiftType shift_type;
+    int shift_count;
 }shift_t,*shift;
 
 typedef struct Workers_s
@@ -26,7 +27,7 @@ typedef struct Workers_s
     HrmWorkerRole role;
     float wage;
     int numOfShifts;
-    shift_t Shifts[MAX_SHIFT];
+    shift_t *Shifts;
 }worker_t,*Worker;
 /*worker_t type , Worker is pointer */
 
@@ -100,6 +101,7 @@ HrmResult HrMgmtAddWorker(HrMgmt hrm,const char *name, int id, HrmWorkerRole rol
     strncpy(add_worker->name,name,MAX_NAME_LEN);
     add_worker->role = role;
     add_worker->wage = wage;
+    add_worker->Shifts->shift_count = 0;
 
     if (hrm == NULL)
         return HRM_NULL_ARGUMENT;
@@ -117,13 +119,12 @@ HrmResult HrMgmtAddWorker(HrMgmt hrm,const char *name, int id, HrmWorkerRole rol
     return HRM_SUCCESS;
 }
 HrmResult HrMgmtRemoveWorker(HrMgmt hrm, int id){
-    /*
     if(hrm == NULL)
         return HRM_NULL_ARGUMENT;
-    */
+
     linkedListGoToHead(hrm->list);
     
-
+    
     if(linkedListFind(hrm->list,&id,matchWorkerById) == LIST_SUCCESS){
         if(linkedListRemoveCurrent(hrm->list) != LIST_SUCCESS)
             return HRM_INVALID_WORKER_ID;
@@ -136,28 +137,72 @@ HrmResult HrMgmtRemoveWorker(HrMgmt hrm, int id){
 
 }
 HrmResult HrMgmtAddShiftToWorker(HrMgmt hrm, int id, HrmShiftDay day,HrmShiftType type){
-    
-    /*
     if(hrm == NULL)
-        return HRM_NULL_ARGUMENT;
-    */
+        return HRM_NULL_ARGUMENT; 
+
     linkedListGoToHead(hrm->list);
     if(id < 0)
         return HRM_INVALID_WORKER_ID;
     if(linkedListFind(hrm->list,&id,matchWorkerById) == LIST_SUCCESS){
         Worker worker_shift;  
-        /*  
-        if(linkedListGetCurrent(hrm->list,(ListElement *)worker_shift->numOfShifts))
-            return HRM_SHIFTS_OVERFLLOW;
-        else if(linkedListGetCurrent(hrm->list, (ListElement*)&worker_shift) == LIST_SUCCESS)
-            return HRM_SHIFT_ALREADY_EXISTS;
-        */
+        
+        if(linkedListGetCurrent(hrm->list,(ListElement *)&worker_shift))
+        {
+            for (int i = 0; i < worker_shift->numOfShifts; i++) {
+                if(day == worker_shift->Shifts[i].day && type == worker_shift->Shifts[i].shift_type)
+                    return HRM_SHIFT_ALREADY_EXISTS;
+            }
+            shift_t* newShifts = realloc(worker_shift->Shifts, (worker_shift->numOfShifts + 1) * sizeof(shift_t));
+            if (newShifts == NULL) {
+                free(newShifts);
+                return HRM_OUT_OF_MEMORY;
+            }
+            if(newShifts->shift_count > worker_shift->numOfShifts)
+                return HRM_SHIFTS_OVERFLLOW;
+            else{
+                worker_shift->Shifts = newShifts;
+                worker_shift->Shifts[worker_shift->Shifts->shift_count].day = day;
+                worker_shift->Shifts[worker_shift->Shifts->shift_count].shift_type = type;
+                worker_shift->Shifts->shift_count++;
+                return HRM_SUCCESS;
+            }
+        }
     }
     else
         return HRM_WORKER_DOES_NOT_EXIST;
-}
-HrmResult HrMgmtRemoveShiftFromWorker(HrMgmt hrm, int id, HrmShiftDay day,HrmShiftType type){
 
+}
+
+HrmResult HrMgmtRemoveShiftFromWorker(HrMgmt hrm, int id, HrmShiftDay day,HrmShiftType type){
+     if(hrm == NULL)
+        return HRM_NULL_ARGUMENT;
+
+    linkedListGoToHead(hrm->list);
+    if(id < 0)
+        return HRM_INVALID_WORKER_ID;
+    if(linkedListFind(hrm->list,&id,matchWorkerById) == LIST_SUCCESS){
+        Worker remove_worker_shift;  
+         
+        if(linkedListGetCurrent(hrm->list,(ListElement *)&remove_worker_shift))
+        {
+            for (int i = 0; i < remove_worker_shift->numOfShifts; i++) {
+                if(day == remove_worker_shift->Shifts[i].day && type == remove_worker_shift->Shifts[i].shift_type)
+                {
+                    for (int j = i; j < remove_worker_shift->numOfShifts - 1; j++) {
+                        remove_worker_shift->Shifts[j] = remove_worker_shift->Shifts[j + 1];
+                    }
+                remove_worker_shift->numOfShifts--;
+                
+                remove_worker_shift->Shifts[remove_worker_shift->numOfShifts].day = (HrmShiftDay)0;
+                remove_worker_shift->Shifts[remove_worker_shift->numOfShifts].shift_type = (HrmShiftType)0;  
+                return HRM_SUCCESS;
+                }    
+            }
+            return HRM_SHIFT_DOES_NOT_EXIST;
+        }
+    }
+    else
+        return HRM_WORKER_DOES_NOT_EXIST;
 }
 HrmResult HrMgmtTransferShift(HrMgmt hrm, int fromId, int toId,HrmShiftDay day, HrmShiftType type){
 
